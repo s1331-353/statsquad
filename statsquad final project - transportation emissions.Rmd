@@ -1,0 +1,18 @@
+---
+title: "statsquad final project - transportation emissions"
+author: "Ali Sanford"
+date: "April 23, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(DataComputing)
+library(dplyr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+emissionsdata <- read.table("/Users/alisanford/Desktop/statsfinalproject/zipemissions.txt", fill = TRUE)
+
+
+```
