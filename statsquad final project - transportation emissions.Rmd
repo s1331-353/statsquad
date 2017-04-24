@@ -14,5 +14,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 emissionsdata <- read.table("/Users/alisanford/Desktop/statsfinalproject/zipemissions.txt", fill = TRUE)
 
+colnames(emissionsdata) = as.character(unlist(emissionsdata[1,]))
+emissionsdata = emissionsdata[-1,]
 
 ```
+
+```{r}
+emissionsdataSFLA <- emissionsdata %>%
+  filter(CountyName %in% c("LOSANGELES", "SANFRANCISCO")) %>%
+  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`)
+```
+
