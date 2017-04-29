@@ -1,0 +1,67 @@
+---
+title: "metro only"
+author: "Ali Sanford"
+date: "April 28, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(DataComputing)
+library(dplyr)
+library(geosphere) #contains the distance function that we used
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+emissionsdata <- read.table("/Users/alisanford/Desktop/statsfinalproject/zipemissions.txt", fill = TRUE) #imported data obtained from UC Berkeley's CoolClimate Network. Data includes info about carbon emissions for each zip code in the US, and some identifying information about each zip code.
+
+colnames(emissionsdata) = as.character(unlist(emissionsdata[1,])) #made the first row of the emissionsdata df into the column names
+emissionsdata = emissionsdata[-1,] #deleted the first row (containing column names)
+emissionsdata$closestops <- rep(0,nrow(emissionsdata)) #added a new column; later we will check which bus stops are within ~3mi of each zip code and put the total in this column
+```
+
+```{r}
+emissionsdataLA <- emissionsdata %>% #made a Los Angeles-specific df of emissions data
+  filter(CountyName == "LOSANGELES") %>% #pulled out info only for zipcodes within Los Angeles County
+  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`, `closestops`) %>% #selected only variables that might be relevant to our analysis
+  mutate(Latitude = as.numeric(paste(Latitude)), Longitude = as.numeric(paste(Longitude))) #changed coordinates to numeric so that they will run through our distance function properly later
+
+
+emissionsdataSF <- emissionsdata %>%
+  filter(CountyName == "SANFRANCISCO") %>%
+  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`, `closestops`) %>%
+  mutate(Latitude = as.numeric(Latitude), Longitude = as.numeric(Longitude)) #same process as above, but for San Francisco County rather than LA 
+```
+
+```{r}
+labusstops <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops.txt", fill=TRUE, header=TRUE, quote="", sep=",") #imported data that includes names and coordinates of every bus and rail stop within Los Angeles
+lastop_coords <- labusstops %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% #selected only variables pertaining to the name and coordinates of each stop
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon)) ##changed coordinates to numeric so that they will run through our distance function properly later
+lastop_coords1 <- lastop_coords[complete.cases(lastop_coords), ] #got rid of cases in which the coordinates were NA (only 3 stops)
+
+  
+```
+
+```{r}
+for (i in 1:nrow(emissionsdataLA)) {
+  d = 0
+  a <- emissionsdataLA$Longitude[i] #set a variable to use for first coordinate of distance calculation
+  b <- emissionsdataLA$Latitude[i] #set a variable to use for first coordinate of distance calculation
+  dist <- c() #created an empty vector that zip to stop distances can be added into
+  
+    for (j in 1:nrow(lastop_coords1)) {
+      e <- lastop_coords1$stop_lon[j]
+      f <- lastop_coords1$stop_lat[j]
+      dist[j] = distHaversine(c(a, b),
+                              c(e, f))
+      
+      if (dist[j] < 4828) {
+        d = d + 1
+      }
+      emissionsdataLA$closestops[i] = d
+    }
+}
+
+```
+
