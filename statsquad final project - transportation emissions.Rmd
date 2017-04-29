@@ -33,46 +33,75 @@ emissionsdataSF <- emissionsdata %>%
   mutate(Latitude = as.numeric(Latitude), Longitude = as.numeric(Longitude)) #same process as above, but for San Francisco County rather than LA 
 ```
 
-```{r}
-lastops <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops.txt", fill=TRUE, header=TRUE, quote="", sep=",") #imported data that includes names and coordinates of every bus and rail stop within Los Angeles
-lastop_coords <- labusstops %>%
-  select(`stop_name`, `stop_lat`, `stop_lon`) %>% #selected only variables pertaining to the name and coordinates of each stop
-  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon)) ##changed coordinates to numeric so that they will run through our distance function properly later
-lastop_coords1 <- lastop_coords[complete.cases(lastop_coords), ] #got rid of cases in which the coordinates were NA (only 3 stops)
 
-  
+```{r}
+metrobus <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/metrobusstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+metrobus_coords <- metrobus %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon)) 
+
+metrorail <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/metrorailstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+metrorail_coords <- metrorail %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon)) 
+
+bigbluebus <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/bigbluebusstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+bigbluebus_coords <- bigbluebus %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon)) 
+
+burbankbus <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/burbankbusstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+burbankbus_coords <- burbankbus %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+
+culvercitybus <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/culvercitystops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+culvercitybus_coords <- culvercitybus %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+
+dash <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/DASHstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+dash_coords <- dash %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+
+foothilltransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/foothilltransitstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+foothilltransit_coords <- foothilltransit %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+
+gardenatransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/gardenatransitstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+gardenatransit_coords <- gardenatransit %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+
+longbeachtransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/longbeachstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+longbeachtransit_coords <- longbeachtransit %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+
+beachbus <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/redondobeachstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+beachbus_coords <- beachbus %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+
+torrancetransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/torrancestops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+torrancetransit_coords <- torrancetransit %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+```
+
+
+```{r}
+allLAstop_coords <- rbind(metrobus_coords, metrorail_coords, bigbluebus_coords, burbankbus_coords, culvercitybus_coords, dash_coords, foothilltransit_coords, gardenatransit_coords, longbeachtransit_coords, beachbus_coords, torrancetransit_coords)
+
+allLAstop_coords1 <- allLAstop_coords[complete.cases(allLAstop_coords), ]
 ```
 
 
 
-```{r}
-teststops <- lastop_coords[1:50, ] #created df of 50 out of 14,514 cases to test our code without having to wait for the distance function to run through the full dfs
 
-testzips <- emissionsdataLA[1:5, ] #created df of 5 out of 270 cases to test our code without having to wait for the distance function to run through the full dfs
 
-```
-
-```{r}
-
-  for (i in 1:nrow(testzips)) { 
-  d = 0
-  a <- testzips$Longitude[i]
-  b <- testzips$Latitude[i]
-  dist <- c()
-    for (j in 1:nrow(teststops)) {
-    
-    dist[j] = distHaversine(c(a, b),
-                          c(teststops$stop_lon[j], teststops$stop_lat[j]))
-
-  
-    if (dist[j] < 4828) {
-    d = d + 1
-  }
-    testzips$closestops[i] = d
-  }
-  }
-
-```
 
 
 
@@ -81,13 +110,13 @@ testzips <- emissionsdataLA[1:5, ] #created df of 5 out of 270 cases to test our
 ```{r}
 for (i in 1:nrow(emissionsdataLA)) {
   d = 0
-  a <- emissionsdataLA$Longitude[i] #set a variable to use for first coordinate of distance calculation
-  b <- emissionsdataLA$Latitude[i] #set a variable to use for first coordinate of distance calculation
-  dist <- c() #created an empty vector that zip to stop distances can be added into
+  a <- emissionsdataLA$Longitude[i] 
+  b <- emissionsdataLA$Latitude[i] 
+  dist <- c()
   
-    for (j in 1:nrow(lastop_coords1)) {
-      e <- lastop_coords1$stop_lon[j]
-      f <- lastop_coords1$stop_lat[j]
+    for (j in 1:nrow(allLAstop_coords1)) {
+      e <- allLAstop_coords1$stop_lon[j]
+      f <- allLAstop_coords1$stop_lat[j]
       dist[j] = distHaversine(c(a, b),
                               c(e, f))
       
@@ -97,8 +126,8 @@ for (i in 1:nrow(emissionsdataLA)) {
       emissionsdataLA$closestops[i] = d
     }
 }
-
 ```
+
 
 ```{r}
 for (i in 1:nrow(emissionsdataSF)) {
