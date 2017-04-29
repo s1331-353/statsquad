@@ -95,37 +95,64 @@ torrancetransit_coords <- torrancetransit %>%
 ```{r}
 allLAstop_coords <- rbind(metrobus_coords, metrorail_coords, bigbluebus_coords, burbankbus_coords, culvercitybus_coords, dash_coords, foothilltransit_coords, gardenatransit_coords, longbeachtransit_coords, beachbus_coords, torrancetransit_coords)
 
-allLAstop_coords1 <- allLAstop_coords[complete.cases(allLAstop_coords), ]
+allLAstop_coords_unique <- unique(allLAstop_coords)
+
+allLAstop_coords1 <- allLAstop_coords_unique[complete.cases(allLAstop_coords_unique), ]
 ```
-
-
-
-
-
-
-
-
 
 
 ```{r}
 for (i in 1:nrow(emissionsdataLA)) {
-  d = 0
-  a <- emissionsdataLA$Longitude[i] 
-  b <- emissionsdataLA$Latitude[i] 
-  dist <- c()
+  dLA = 0
+  aLA <- emissionsdataLA$Longitude[i] 
+  bLA <- emissionsdataLA$Latitude[i] 
+  distLA <- c()
   
     for (j in 1:nrow(allLAstop_coords1)) {
-      e <- allLAstop_coords1$stop_lon[j]
-      f <- allLAstop_coords1$stop_lat[j]
-      dist[j] = distHaversine(c(a, b),
-                              c(e, f))
+      eLA <- allLAstop_coords1$stop_lon[j]
+      fLA <- allLAstop_coords1$stop_lat[j]
+      dist[j] = distHaversine(c(aLA, bLA),
+                              c(eLA, fLA))
       
       if (dist[j] < 4828) {
-        d = d + 1
+        dLA = dLA + 1
       }
-      emissionsdataLA$closestops[i] = d
+      emissionsdataLA$closestops[i] = dLA
     }
 }
+```
+
+```{r}
+bartstops <- read.csv("/Users/alisanford/Desktop/statsfinalproject/sfstops/BARTclean.csv")
+bartstop_coords <- bartstops %>%
+  filter(Zipcode %in% emissionsdataSF$ZipCode) %>%
+  select(`Name`, `Latitude`, `Longitude`) %>%
+  mutate(Latitude = as.numeric(Latitude), Longitude = as.numeric(Longitude))
+
+munistops <- read.table("/Users/alisanford/Desktop/statsfinalproject/sfstops/munistops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+muni_coords <- munistops %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+
+samtransstops <- read.table("/Users/alisanford/Desktop/statsfinalproject/sfstops/samtransstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+samtrans_coords <- samtransstops %>%
+  filter(zone_id == 2) %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+
+actransitstops <- read.table("/Users/alisanford/Desktop/statsfinalproject/sfstops/actransitstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+actransit_coords <- actransitstops %>%
+  filter(stop_code %in% c("50582", "50591")) %>%
+  select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+
+```
+
+```{r}
+allSFstop_coords <- rbind(muni_coords, samtrans_coords, actransit_coords)
+allSFstop_coords_unique <- unique(allSFstop_coords)
+allSFstop_coords1 <- allSFstop_coords_unique[complete.cases(allSFstop_coords_unique), ]
+
 ```
 
 
@@ -136,11 +163,11 @@ for (i in 1:nrow(emissionsdataSF)) {
   b <- emissionsdataSF$Latitude[i]
   dist <- c()
   
-    for (j in 1:nrow(SFSTOPDATA)) {
-      e <- SFSTOPDATA$stop_lon[j]
-      f <- SFSTOPDATA$stop_lat[j]
+    for (j in 1:nrow(allSFstop_coords1)) {
+      c <- allSFstop_coords1$stop_lon[j]
+      d <- allSFstop_coords1$stop_lat[j]
       dist[j] = distHaversine(c(a, b),
-                              c(e, f))
+                              c(c, d))
       
       if (dist[j] < 4828) {
         d = d + 1
