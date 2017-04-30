@@ -1,25 +1,21 @@
 ---
-title: "Untitled"
-author: ""
-date: ""
-output: 
-  html_document:
-    fig_height: 5
-    fig_width: 8
+title: "Maps"
+output: github_document
 ---
-<!-- Don't edit in between this line and the one below -->
-```{r include=FALSE}
-# Don't delete this chunk if you are using the DataComputing package
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 library(DataComputing)
+library(ggmap)
 ```
-*Source file* 
-```{r, results='asis', echo=FALSE}
-includeSourceDocuments()
-```
-<!-- Don't edit the material above this line -->
+
+## GitHub Documents
+
+This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
 
 
 ```{r}
+
 s133df <- read.csv('C:/Users/Shiva/Downloads/annual_all_2016/annual_all_2016.csv')
 head(s133df,200)
 s133df2 <- s133df %>% filter(Parameter.Name == "Ozone") %>% filter(Metric.Used == "Daily maxima of observed hourly values (between 9:00 AM and 8:00 PM)") %>% filter(State.Name == "California")
