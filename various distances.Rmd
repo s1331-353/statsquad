@@ -1,0 +1,56 @@
+---
+title: "for loop various distances"
+author: "Ali Sanford"
+date: "April 29, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+emissionsdataLA1 <- emissionsdata %>% #made a Los Angeles-specific df of emissions data
+  filter(CountyName == "LOSANGELES") %>% #pulled out info only for zipcodes within Los Angeles County
+  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`, `closestops`) %>% #selected only variables that might be relevant to our analysis
+  mutate(Latitude = as.numeric(paste(Latitude)), Longitude = as.numeric(paste(Longitude)))
+
+emissionsdataLA1$within1km <- rep(0,nrow(emissionsdataLA1))
+emissionsdataLA1$within2km <- rep(0,nrow(emissionsdataLA1))
+emissionsdataLA1$within3km <- rep(0,nrow(emissionsdataLA1))
+
+```
+
+
+```{r}
+for (i in 1:nrow(emissionsdataLA1)) {
+  d1 = 0
+  d2 = 0
+  d3 = 0
+  a <- emissionsdataLA1$Longitude[i] 
+  b <- emissionsdataLA1$Latitude[i] 
+  dist <- c()
+  
+    for (j in 1:nrow(allLAstop_coords1)) {
+      e <- allLAstop_coords1$stop_lon[j]
+      f <- allLAstop_coords1$stop_lat[j]
+      dist[j] = distHaversine(c(a, b),
+                              c(e, f))
+      
+      if (dist[j] < 1000) {
+        d1 = d1 + 1
+        d2 = d2 + 1
+        d3 = d3 + 1
+      } else if (dist[j] < 2000 & dist[j] > 1000) {
+        d2 = d2 + 1
+        d3 = d3 + 1
+      } else if (dist[j] < 3000 & dist[j] > 2000) {
+        d3 = d3 + 1
+      }
+      
+    emissionsdataLA1$within1km[i] = d1
+    emissionsdataLA1$within2km[i] = d2
+    emissionsdataLA1$within3km[i] = d3
+          }
+    }
+```

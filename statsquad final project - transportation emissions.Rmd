@@ -9,6 +9,8 @@ output: html_document
 library(DataComputing)
 library(dplyr)
 library(geosphere) #contains the distance function that we used
+library(ggplot2)
+library(statisticalModeling)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -27,10 +29,12 @@ emissionsdataLA <- emissionsdata %>% #made a Los Angeles-specific df of emission
   mutate(Latitude = as.numeric(paste(Latitude)), Longitude = as.numeric(paste(Longitude))) #changed coordinates to numeric so that they will run through our distance function properly later
 
 
+
 emissionsdataSF <- emissionsdata %>%
   filter(CountyName == "SANFRANCISCO") %>%
   select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`, `closestops`) %>%
-  mutate(Latitude = as.numeric(Latitude), Longitude = as.numeric(Longitude)) #same process as above, but for San Francisco County rather than LA 
+  mutate(Latitude = as.numeric(paste(Latitude)), Longitude = as.numeric(paste(Longitude))) #same process as above, but for San Francisco County rather than LA 
+
 ```
 
 
@@ -103,21 +107,21 @@ allLAstop_coords1 <- allLAstop_coords_unique[complete.cases(allLAstop_coords_uni
 
 ```{r}
 for (i in 1:nrow(emissionsdataLA)) {
-  dLA = 0
-  aLA <- emissionsdataLA$Longitude[i] 
-  bLA <- emissionsdataLA$Latitude[i] 
-  distLA <- c()
+  d = 0
+  a <- emissionsdataLA$Longitude[i] 
+  b <- emissionsdataLA$Latitude[i] 
+  dist <- c()
   
     for (j in 1:nrow(allLAstop_coords1)) {
-      eLA <- allLAstop_coords1$stop_lon[j]
-      fLA <- allLAstop_coords1$stop_lat[j]
-      dist[j] = distHaversine(c(aLA, bLA),
-                              c(eLA, fLA))
+      e <- allLAstop_coords1$stop_lon[j]
+      f <- allLAstop_coords1$stop_lat[j]
+      dist[j] = distHaversine(c(a, b),
+                              c(e, f))
       
       if (dist[j] < 4828) {
-        dLA = dLA + 1
+        d = d + 1
       }
-      emissionsdataLA$closestops[i] = dLA
+      emissionsdataLA$closestops[i] = d
     }
 }
 ```
@@ -157,24 +161,57 @@ allSFstop_coords1 <- allSFstop_coords_unique[complete.cases(allSFstop_coords_uni
 
 
 ```{r}
-for (i in 1:nrow(emissionsdataSF)) {
-  d = 0
-  a <- emissionsdataSF$Longitude[i]
-  b <- emissionsdataSF$Latitude[i]
-  dist <- c()
+for (k in 1:nrow(emissionsdataSF)) {
+  z = 0
+  v <- emissionsdataSF$Longitude[k]
+  w <- emissionsdataSF$Latitude[k]
+  dista <- c()
   
-    for (j in 1:nrow(allSFstop_coords1)) {
-      c <- allSFstop_coords1$stop_lon[j]
-      d <- allSFstop_coords1$stop_lat[j]
-      dist[j] = distHaversine(c(a, b),
-                              c(c, d))
+    for (l in 1:nrow(allSFstop_coords1)) {
+      x <- allSFstop_coords1$stop_lon[l]
+      y <- allSFstop_coords1$stop_lat[l]
+      dista[l] = distHaversine(c(v, w),
+                              c(x, y))
       
-      if (dist[j] < 4828) {
-        d = d + 1
+      if (dista[l] < 4828) {
+        z = z + 1
       }
-      emissionsdataSF$closestops[i] = d
+      emissionsdataSF$closestops[k] = z
     }
 }
 
 ```
+
+
+```{r}
+LAplot <- emissionsdataLA %>%
+  ggplot(aes(x = closestops, y = `Transport(tCO2e/yr)`)) +
+  geom_point()
+```
+
+
+```{r}
+SFplot <- emissionsdataSF %>%
+  ggplot(aes(x = closestops, y = `Transport(tCO2e/yr)`)) +
+  geom_point()
+
+```
+
+
+```{r}
+emissionsdataLAscores <- emissionsdataLA %>%
+  mutate(Population = as.numeric(paste(Population))) %>%
+  mutate(stopscore = closestops/Population)
+```
+
+```{r}
+emissionsdataLA1 <- emissionsdataLA1 %>%
+  mutate(`Transport(tCO2e/yr)` = as.numeric(paste(`Transport(tCO2e/yr)`)))
+LA1kmplot <- emissionsdataLA1 %>%
+  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`)) +
+  geom_point()
+LA1kmplot
+
+```
+
 
