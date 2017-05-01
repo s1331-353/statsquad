@@ -15,81 +15,86 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-emissionsdata <- read.table("/Users/alisanford/Desktop/statsfinalproject/zipemissions.txt", fill = TRUE) #imported data obtained from UC Berkeley's CoolClimate Network. Data includes info about carbon emissions for each zip code in the US, and some identifying information about each zip code.
+emissionsdata <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/zipemissions.txt", fill = TRUE) #imported data obtained from UC Berkeley's CoolClimate Network. Data includes info about carbon emissions for each zip code in the US, and some identifying information about each zip code.
 
 colnames(emissionsdata) = as.character(unlist(emissionsdata[1,])) #made the first row of the emissionsdata df into the column names
 emissionsdata = emissionsdata[-1,] #deleted the first row (containing column names)
-emissionsdata$closestops <- rep(0,nrow(emissionsdata)) #added a new column; later we will check which bus stops are within ~3mi of each zip code and put the total in this column
+
 ```
 
 ```{r}
-emissionsdataLA <- emissionsdata %>% #made a Los Angeles-specific df of emissions data
+emissionsdataLA1 <- emissionsdata %>% #made a Los Angeles-specific df of emissions data
   filter(CountyName == "LOSANGELES") %>% #pulled out info only for zipcodes within Los Angeles County
-  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`, `closestops`) %>% #selected only variables that might be relevant to our analysis
-  mutate(Latitude = as.numeric(paste(Latitude)), Longitude = as.numeric(paste(Longitude))) #changed coordinates to numeric so that they will run through our distance function properly later
+  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`) %>% #selected only variables that might be relevant to our analysis
+  mutate(`Latitude` = as.numeric(paste(`Latitude`)), `Longitude` = as.numeric(paste(`Longitude`)), `IncomePerHousehold` = as.numeric(paste(`IncomePerHousehold`)), `Transport(tCO2e/yr)` = as.numeric(paste(`Transport(tCO2e/yr)`)), `AverageHouseValue` = as.numeric(paste(`AverageHouseValue`)), `Population` = as.numeric(paste(`Population`)))
 
+emissionsdataLA1$within1km <- rep(0,nrow(emissionsdataLA1))
+emissionsdataLA1$within2km <- rep(0,nrow(emissionsdataLA1))
+emissionsdataLA1$within3km <- rep(0,nrow(emissionsdataLA1))
 
+emissionsdataSF1 <- emissionsdata %>% #made a Los Angeles-specific df of emissions data
+  filter(CountyName == "SANFRANCISCO") %>% #pulled out info only for zipcodes within SF County
+  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`) %>% #selected only variables that might be relevant to our analysis
+  mutate(`Latitude` = as.numeric(paste(`Latitude`)), `Longitude` = as.numeric(paste(`Longitude`)), `IncomePerHousehold` = as.numeric(paste(`IncomePerHousehold`)), `Transport(tCO2e/yr)` = as.numeric(paste(`Transport(tCO2e/yr)`)), `AverageHouseValue` = as.numeric(paste(`AverageHouseValue`)), `Population` = as.numeric(paste(`Population`)))
 
-emissionsdataSF <- emissionsdata %>%
-  filter(CountyName == "SANFRANCISCO") %>%
-  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`, `closestops`) %>%
-  mutate(Latitude = as.numeric(paste(Latitude)), Longitude = as.numeric(paste(Longitude))) #same process as above, but for San Francisco County rather than LA 
-
+emissionsdataSF1$within1km <- rep(0,nrow(emissionsdataSF1))
+emissionsdataSF1$within2km <- rep(0,nrow(emissionsdataSF1))
+emissionsdataSF1$within3km <- rep(0,nrow(emissionsdataSF1))
 ```
 
 
 ```{r}
-metrobus <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/metrobusstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+metrobus <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/metrobusstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 metrobus_coords <- metrobus %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon)) 
 
-metrorail <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/metrorailstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+metrorail <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/metrorailstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 metrorail_coords <- metrorail %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon)) 
 
-bigbluebus <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/bigbluebusstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+bigbluebus <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/bigbluebusstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 bigbluebus_coords <- bigbluebus %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon)) 
 
-burbankbus <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/burbankbusstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+burbankbus <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/burbankbusstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 burbankbus_coords <- burbankbus %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
 
-culvercitybus <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/culvercitystops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+culvercitybus <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/culvercitystops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 culvercitybus_coords <- culvercitybus %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
 
-dash <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/DASHstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+dash <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/DASHstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 dash_coords <- dash %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
 
-foothilltransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/foothilltransitstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+foothilltransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/foothilltransitstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 foothilltransit_coords <- foothilltransit %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
 
-gardenatransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/gardenatransitstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+gardenatransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/gardenatransitstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 gardenatransit_coords <- gardenatransit %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
 
-longbeachtransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/longbeachstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+longbeachtransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/longbeachstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 longbeachtransit_coords <- longbeachtransit %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
 
-beachbus <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/redondobeachstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+beachbus <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/redondobeachstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 beachbus_coords <- beachbus %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
 
-torrancetransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/lastops/torrancestops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+torrancetransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/torrancestops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 torrancetransit_coords <- torrancetransit %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
@@ -106,10 +111,12 @@ allLAstop_coords1 <- allLAstop_coords_unique[complete.cases(allLAstop_coords_uni
 
 
 ```{r}
-for (i in 1:nrow(emissionsdataLA)) {
-  d = 0
-  a <- emissionsdataLA$Longitude[i] 
-  b <- emissionsdataLA$Latitude[i] 
+for (i in 1:nrow(emissionsdataLA1)) {
+  d1 = 0
+  d2 = 0
+  d3 = 0
+  a <- emissionsdataLA1$Longitude[i] 
+  b <- emissionsdataLA1$Latitude[i] 
   dist <- c()
   
     for (j in 1:nrow(allLAstop_coords1)) {
@@ -118,33 +125,43 @@ for (i in 1:nrow(emissionsdataLA)) {
       dist[j] = distHaversine(c(a, b),
                               c(e, f))
       
-      if (dist[j] < 4828) {
-        d = d + 1
+      if (dist[j] < 1000) {
+        d1 = d1 + 1
+        d2 = d2 + 1
+        d3 = d3 + 1
+      } else if (dist[j] < 2000 & dist[j] > 1000) {
+        d2 = d2 + 1
+        d3 = d3 + 1
+      } else if (dist[j] < 3000 & dist[j] > 2000) {
+        d3 = d3 + 1
       }
-      emissionsdataLA$closestops[i] = d
+      
+    emissionsdataLA1$within1km[i] = d1
+    emissionsdataLA1$within2km[i] = d2
+    emissionsdataLA1$within3km[i] = d3
+          }
     }
-}
 ```
 
 ```{r}
-bartstops <- read.csv("/Users/alisanford/Desktop/statsfinalproject/sfstops/BARTclean.csv")
+bartstops <- read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/sfstops/BARTclean.csv")
 bartstop_coords <- bartstops %>%
   filter(Zipcode %in% emissionsdataSF$ZipCode) %>%
   select(`Name`, `Latitude`, `Longitude`) %>%
   mutate(Latitude = as.numeric(Latitude), Longitude = as.numeric(Longitude))
 
-munistops <- read.table("/Users/alisanford/Desktop/statsfinalproject/sfstops/munistops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+munistops <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/sfstops/munistops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 muni_coords <- munistops %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
 
-samtransstops <- read.table("/Users/alisanford/Desktop/statsfinalproject/sfstops/samtransstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+samtransstops <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/sfstops/samtransstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 samtrans_coords <- samtransstops %>%
   filter(zone_id == 2) %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
 
-actransitstops <- read.table("/Users/alisanford/Desktop/statsfinalproject/sfstops/actransitstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+actransitstops <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/sfstops/actransitstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 actransit_coords <- actransitstops %>%
   filter(stop_code %in% c("50582", "50591")) %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
@@ -161,10 +178,12 @@ allSFstop_coords1 <- allSFstop_coords_unique[complete.cases(allSFstop_coords_uni
 
 
 ```{r}
-for (k in 1:nrow(emissionsdataSF)) {
-  z = 0
-  v <- emissionsdataSF$Longitude[k]
-  w <- emissionsdataSF$Latitude[k]
+for (k in 1:nrow(emissionsdataSF1)) {
+  z1 = 0
+  z2 = 0
+  z3 = 0
+  v <- emissionsdataSF1$Longitude[k]
+  w <- emissionsdataSF1$Latitude[k]
   dista <- c()
   
     for (l in 1:nrow(allSFstop_coords1)) {
@@ -173,10 +192,20 @@ for (k in 1:nrow(emissionsdataSF)) {
       dista[l] = distHaversine(c(v, w),
                               c(x, y))
       
-      if (dista[l] < 4828) {
-        z = z + 1
+       if (dista[l] < 1000) {
+        z1 = z1 + 1
+        z2 = z2 + 1
+        z3 = z3 + 1
+      } else if (dista[l] < 2000 & dista[l] > 1000) {
+        z2 = z2 + 1
+        z3 = z3 + 1
+      } else if (dista[l] < 3000 & dista[l] > 2000) {
+        z3 = z3 + 1
       }
-      emissionsdataSF$closestops[k] = z
+      
+    emissionsdataSF1$within1km[k] = z1
+    emissionsdataSF1$within2km[k] = z2
+    emissionsdataSF1$within3km[k] = z3
     }
 }
 
@@ -184,34 +213,22 @@ for (k in 1:nrow(emissionsdataSF)) {
 
 
 ```{r}
-LAplot <- emissionsdataLA %>%
-  ggplot(aes(x = closestops, y = `Transport(tCO2e/yr)`)) +
-  geom_point()
-```
-
-
-```{r}
-SFplot <- emissionsdataSF %>%
-  ggplot(aes(x = closestops, y = `Transport(tCO2e/yr)`)) +
-  geom_point()
-
-```
-
-
-```{r}
-emissionsdataLAscores <- emissionsdataLA %>%
-  mutate(Population = as.numeric(paste(Population))) %>%
-  mutate(stopscore = closestops/Population)
+sfplot <- emissionsdataSF1 %>%
+  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "lm")
+sfplot
 ```
 
 ```{r}
-emissionsdataLA1 <- emissionsdataLA1 %>%
-  mutate(`Transport(tCO2e/yr)` = as.numeric(paste(`Transport(tCO2e/yr)`)))
-LA1kmplot <- emissionsdataLA1 %>%
-  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`)) +
-  geom_point()
-LA1kmplot
-
+laplot <- emissionsdataLA1 %>%
+  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "lm")
+laplot
 ```
 
 
+
+```{r}
+laoilplot <- emissionsdataLA1 %>%
+  ggplot(aes(x = within1km, y = `FUELOIL(gallons)`)) + geom_point() + stat_smooth(method = "lm")
+laoilplot
+
+```
