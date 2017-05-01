@@ -1,0 +1,44 @@
+---
+title: "stat133"
+author: "Dan Savo"
+date: "April 29, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(xml2)
+library(tidyverse)
+
+xml<-read_xml("http://api.bart.gov/api/stn.aspx?cmd=stns&key=MW9S-E7SL-26DU-VV8V")
+
+bart<-xml%>%xml_find_all("//station") %>% map_df(as_list) %>% unnest()
+
+BART <- as.data.frame(bart)
+class(BART)
+```
+
+```{r}
+new_names <- c("Name", "Abbreviation", "Latitude", "Longitude", "Address", "City", "County", "State", "Zipcode") 
+names(BART) <- new_names 
+BARTclean <- BART %>% select(Name, Latitude, Longitude, Zipcode) 
+```
+
+```{r}
+write.csv(BARTclean, "/Users/dannn/Desktop/BARTclean.csv")
+```
+
+```{r}
+# install.packages("geosphere")
+library(geosphere)
+
+View(BARTclean)
+
+BARTclean1 <- BARTclean %>%
+  filter(Zipcode %in% c(94102, 94103, 94105, 94107, 94108, 94109, 94110, 94112, 94111, 94115, 94114, 94117, 94116, 94118, 94121, 94123, 94122, 94124, 94127, 94126, 94129, 94131, 94133, 94132, 94134, 94139, 94143, 94151, 94159, 94158, 94188, 94177))
+
+View(BARTclean1)
+```
