@@ -10,6 +10,7 @@ library(DataComputing)
 library(dplyr)
 library(geosphere) #contains the distance function that we used
 library(ggplot2)
+library(tidyr)
 library(statisticalModeling)
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -213,22 +214,38 @@ for (k in 1:nrow(emissionsdataSF1)) {
 
 
 ```{r}
-sfplot <- emissionsdataSF1 %>%
-  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "lm")
-sfplot
-```
+LAnarrow <- emissionsdataLA1 %>%
+  gather(key=distance, value=number_of_stops, `within1km`, `within2km`, `within3km` )
 
-```{r}
-laplot <- emissionsdataLA1 %>%
-  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "lm")
-laplot
+SFnarrow <- emissionsdataSF1 %>%
+  gather(key=distance, value=number_of_stops, `within1km`, `within2km`, `within3km` )
 ```
-
 
 
 ```{r}
-laoilplot <- emissionsdataLA1 %>%
-  ggplot(aes(x = within1km, y = `FUELOIL(gallons)`)) + geom_point() + stat_smooth(method = "lm")
-laoilplot
-
+laplotfaceted <- LAnarrow %>%
+  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "loess") + facet_grid(. ~ distance)
+laplotfaceted
 ```
+
+
+```{r}
+sfplotfaceted <- SFnarrow %>%
+  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "loess") + facet_grid(. ~ distance)
+sfplotfaceted
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
