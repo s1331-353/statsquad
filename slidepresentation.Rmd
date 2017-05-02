@@ -1,0 +1,68 @@
+---
+title: "Transportation & Emissions"
+author: "Ali Sanford"
+date: "May 1, 2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(DataComputing)
+library(dplyr)
+library(geosphere) #contains the distance function that we used
+library(ggplot2)
+library(tidyr)
+library(statisticalModeling)
+library(RColorBrewer)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## The Relationship Between Public Transportation and Emissions in Two Major CA Cities
+<div class="blue3">Is a neighborhood's proximity to public transit stops related to its carbon emissions?</div>
+
+<div class="green3">-We hypothesized that zip codes with more public transit stops would have less carbon emissions overall</div>
+<div class="green3">-We thought it would be interesting to see if this relationship was affected by a zip code's average household income</div>
+<div class="green3">-We also wondered if the relationship changes when carbon emissions are adjusted for the population of the zip code</div>
+
+
+## Data Sets and Methods
+<div class="blue3">Emissions Data</div>
+<div class="green3">-The Cool Climate Network provided us with a dataset including carbon emissions for every zip code in the US, broken down by emission type</div>
+<div class="green3">-It also included other information about each zip code</div>
+<div class="green3">-We filtered the data for zip codes within Los Angeles and San Francisco, and selected only the relevant variables, including Longitude and Latitude, Transport Emissions and Average Income Per Household</div>
+<div class="blue3">Transit Stop Data</div>
+<div class="green3">-Public transit systems make their system data available in GTFS format, which includes .txt files with each stop's name, longitude and latitude</div>
+<div class="green3">-We joined together the data for all transit systems in LA and in SF so that we had the coordinates for each stop in each city</div>
+<div class="blue3">Methods</div>
+<div class="green3">-We cleaned the data using functions such as `mutate()`, `filter()`, `select()`, `join()`, and others that we learned in class</div>
+<div class="green3">-We calculated distances between zip codes and transit stops and determined the number of stops nearby each zip code using nested for loops with if/else statements inside them</div>
+<div class="green3">-We also brought in things from outside of class - the geo.sphere package, arcGIS mapping, and ggmapping</div>
+
+
+
+## Visualizing the Relationship
+```{r include = FALSE}
+read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/LAnarrow.csv")
+read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/SFnarrow.csv")
+read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/emissionsdataLA1.csv")
+read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/emissionsdataSF1.csv")
+
+```
+
+```{r}
+laplotfaceted <- LAnarrow %>%
+  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`, col = distance)) + 
+  geom_point(alpha = .4) + 
+  stat_smooth(method = "loess") + facet_grid(. ~ distance, switch = "both") +
+  labs(title="Carbon Emissions vs Public Transit Stops - Los Angeles", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
+laplotfaceted
+
+sfplotfaceted <- SFnarrow %>%
+  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`, col = distance)) + geom_point(alpha = .4) + stat_smooth(method = "loess") + facet_grid(. ~ distance, switch = "both") +
+  labs(title="Carbon Emissions vs Public Transit Stops - San Francisco", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
+sfplotfaceted
+```
+
+
+
+
