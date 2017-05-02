@@ -14,6 +14,7 @@ library(ggplot2)
 library(tidyr)
 library(statisticalModeling)
 library(RColorBrewer)
+library(ggmap)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -50,7 +51,71 @@ emissionsdataSF1slides <- read.csv("/Users/alisanford/Desktop/statsfinalproject/
 ```
 
 
+```{r}
+laplotfaceted <- LAnarrowslides %>%
+  ggplot(aes(x = number_of_stops, y = Transport.tCO2e.yr., col = distance)) + 
+  geom_point(alpha = .4) + 
+  stat_smooth(method = "loess") + facet_grid(. ~ distance, switch = "both") +
+  labs(title="Carbon Emissions vs Public Transit Stops - Los Angeles", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
+laplotfaceted
+```
 
 
 
+
+```{r}
+sfplotfaceted <- SFnarrowslides %>%
+  ggplot(aes(x = number_of_stops, y = Transport.tCO2e.yr., col = distance)) + geom_point(alpha = .4) + stat_smooth(method = "loess") + facet_grid(. ~ distance, switch = "both") +
+  labs(title="Carbon Emissions vs Public Transit Stops - San Francisco", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
+sfplotfaceted
+```
+
+
+
+```{r}
+emissionsdataLA1slides$stoplevels <- cut(emissionsdataLA1slides$within1km, 
+                       breaks = c(-Inf, 25, 50, 75, 100, 125, 150, 175, 200, Inf), 
+                       labels = c("0-25", "26-50", "51-75", "76-100", "101-125", "126-150", "151-175", "176-200", "201+"), 
+                       right = FALSE)
+
+emissionsdataSF1slides$stoplevels <- cut(emissionsdataSF1slides$within1km, 
+                       breaks = c(-Inf, 25, 50, 75, 100, 125, 150, 175, 200, Inf), 
+                       labels = c("0-25", "26-50", "51-75", "76-100", "101-125", "126-150", "151-175", "176-200", "201+"), 
+                       right = FALSE)
+
+emissionsdataLA1slides$emissionlevels <- cut(emissionsdataLA1slides$`Transport.tCO2e.yr.`, 
+                       breaks = c(-Inf, 5, 10, 15, 20, 25, 30, 35, 40, Inf), 
+                       labels = c("0-5", "6-10", "11-15", "16-20", "21-25", "26-30", "31-35", "36-40", "41+"), 
+                       right = FALSE)
+
+emissionsdataSF1slides$emissionlevels <- cut(emissionsdataSF1slides$`Transport.tCO2e.yr.`, 
+                       breaks = c(-Inf, 5, 10, 15, 20, 25, 30, 35, 40, Inf), 
+                       labels = c("0-5", "6-10", "11-15", "16-20", "21-25", "26-30", "31-35", "36-40", "41+"), 
+                       right = FALSE)
+```
+
+```{r}
+ggplot(emissionsdataLA1slides, aes(x = stoplevels, fill = emissionlevels)) +
+  geom_bar(position = "fill", alpha = 0.6) +
+  scale_fill_brewer(palette = "Spectral") +
+  labs(title="Number of Stops vs Emission Levels - LA", x="Number of stops within 1km", legend = "Carbon Emissions from Transportation (tons/yr)")
+```
+
+
+```{r}
+ggplot(emissionsdataSF1, aes(x = stoplevels, fill = emissionlevels)) +
+  geom_bar(position = "fill", alpha = 0.6) +
+  scale_fill_brewer(palette = "Spectral") +
+  labs(title="Number of Stops vs Emission Levels - SF", x="Number of stops within 1km", legend = "Carbon Emissions from Transportation (tons/yr)")
+```
+
+
+```{r}
+map<-ggmap::get_map(location='Los Angeles', zoom=10, maptype = "terrain",
+             source='google',color='color')
+png("map1.png")
+map1 <- ggmap(map) + geom_point(aes(x = Longitude, y = Latitude, size=number_of_stops, col=Transport.tCO2e.yr.), data = LAnarrow %>% filter(distance == "within1km"), alpha = 1)
+
+str(emissionsdataLA1slides)
+```
 
