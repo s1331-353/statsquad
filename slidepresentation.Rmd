@@ -2,7 +2,7 @@
 title: "Transportation & Emissions"
 author: "Ali Sanford"
 date: "May 1, 2017"
-output: ioslides_presentation
+output: slidy_presentation
 ---
 
 ```{r setup, include=FALSE}
@@ -25,7 +25,7 @@ knitr::opts_chunk$set(echo = TRUE)
 <div class="green3">-We also wondered if the relationship changes when carbon emissions are adjusted for the population of the zip code</div>
 
 
-## Data Sets and Methods
+## Data Sets and Methods {.smaller}
 <div class="blue3">Emissions Data</div>
 <div class="green3">-The Cool Climate Network provided us with a dataset including carbon emissions for every zip code in the US, broken down by emission type</div>
 <div class="green3">-It also included other information about each zip code</div>
@@ -42,26 +42,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Visualizing the Relationship
 ```{r include = FALSE}
-read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/LAnarrow.csv")
-read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/SFnarrow.csv")
-read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/emissionsdataLA1.csv")
-read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/emissionsdataSF1.csv")
+LAnarrowslides <- read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/LAnarrow.csv")
+SFnarrowslides <- read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/SFnarrow.csv")
+emissionsdataLA1slides <- read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/emissionsdataLA1.csv")
+emissionsdataSF1slides <- read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/emissionsdataSF1.csv")
 
 ```
 
-```{r}
-laplotfaceted <- LAnarrow %>%
-  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`, col = distance)) + 
-  geom_point(alpha = .4) + 
-  stat_smooth(method = "loess") + facet_grid(. ~ distance, switch = "both") +
-  labs(title="Carbon Emissions vs Public Transit Stops - Los Angeles", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
-laplotfaceted
 
-sfplotfaceted <- SFnarrow %>%
-  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`, col = distance)) + geom_point(alpha = .4) + stat_smooth(method = "loess") + facet_grid(. ~ distance, switch = "both") +
-  labs(title="Carbon Emissions vs Public Transit Stops - San Francisco", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
-sfplotfaceted
-```
 
 
 
