@@ -103,19 +103,12 @@ ggplot(emissionsdataLA1slides, aes(x = stoplevels, fill = emissionlevels)) +
 
 
 ```{r}
-ggplot(emissionsdataSF1, aes(x = stoplevels, fill = emissionlevels)) +
+ggplot(emissionsdataSF1slides, aes(x = stoplevels, fill = emissionlevels)) +
   geom_bar(position = "fill", alpha = 0.6) +
   scale_fill_brewer(palette = "Spectral") +
   labs(title="Number of Stops vs Emission Levels - SF", x="Number of stops within 1km", legend = "Carbon Emissions from Transportation (tons/yr)")
 ```
 
 
-```{r}
-map<-ggmap::get_map(location='Los Angeles', zoom=10, maptype = "terrain",
-             source='google',color='color')
-png("map1.png")
-map1 <- ggmap(map) + geom_point(aes(x = Longitude, y = Latitude, size=number_of_stops, col=Transport.tCO2e.yr.), data = LAnarrow %>% filter(distance == "within1km"), alpha = 1)
 
-str(emissionsdataLA1slides)
-```
 
