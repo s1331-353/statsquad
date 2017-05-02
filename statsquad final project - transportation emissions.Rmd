@@ -12,6 +12,7 @@ library(geosphere) #contains the distance function that we used
 library(ggplot2)
 library(tidyr)
 library(statisticalModeling)
+library(RColorBrewer)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -214,6 +215,16 @@ for (k in 1:nrow(emissionsdataSF1)) {
 
 
 ```{r}
+emissionsdataLA1$incomelevels <- cut(emissionsdataLA1$IncomePerHousehold, 
+                       breaks = c(-Inf, 40000, 60000, 80000, 100000, Inf), 
+                       labels = c("1", "2", "3", "4", "5"), 
+                       right = FALSE)
+
+emissionsdataSF1$incomelevels <- cut(emissionsdataSF1$IncomePerHousehold, 
+                       breaks = c(-Inf, 40000, 60000, 80000, 100000, Inf), 
+                       labels = c("1", "2", "3", "4", "5"), 
+                       right = FALSE)
+
 LAnarrow <- emissionsdataLA1 %>%
   gather(key=distance, value=number_of_stops, `within1km`, `within2km`, `within3km` )
 
@@ -223,8 +234,28 @@ SFnarrow <- emissionsdataSF1 %>%
 
 
 ```{r}
+lacolortest <- emissionsdataLA1 %>%
+  ggplot(aes(x = within3km, y = `Transport(tCO2e/yr)`, group = incomelevels, col = incomelevels)) + geom_point() + stat_smooth(method = "loess", se = FALSE)
+lacolortest
+
+```
+
+```{r}
+sfcolortest <- emissionsdataSF1 %>%
+  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`, group = incomelevels, col = incomelevels)) + geom_point() + stat_smooth(method = "loess", se = FALSE)
+sfcolortest
+
+```
+
+
+
+
+```{r}
 laplotfaceted <- LAnarrow %>%
-  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "loess") + facet_grid(. ~ distance)
+  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`)) + 
+  geom_point() + 
+  stat_smooth(method = "loess") + facet_grid(. ~ distance) +
+  labs(title="San Franciscio Emissions Data", x="Number of stops within", y="Tons of CO2 emissions per year due to Transportation")
 laplotfaceted
 ```
 
