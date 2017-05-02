@@ -12,6 +12,7 @@ library(ggplot2)
 library(tidyr)
 library(statisticalModeling)
 library(RColorBrewer)
+library(ggmap)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ## Visualizations
@@ -47,3 +48,11 @@ sfplotfaceted <- SFnarrow %>%
   ggplot(aes(x = number_of_stops, y = Transport.tCO2e.yr.)) + geom_point() + stat_smooth(method = "loess") + facet_grid(. ~ distance)
 sfplotfaceted
 ```
+
+```{r warning = FALSE}
+map<-ggmap::get_map(location='Los Angeles', zoom=10, maptype = "terrain",
+             source='google',color='color')
+png("map1.png")
+map1 <- ggmap(map) + geom_point(aes(x = Longitude, y = Latitude, size=number_of_stops, col=Transport.tCO2e.yr.), data = LAnarrow %>% filter(distance == "within1km"), alpha = 1) + labs(x="")
+```
+
