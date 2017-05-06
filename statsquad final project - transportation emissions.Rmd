@@ -148,7 +148,7 @@ for (i in 1:nrow(emissionsdataLA1)) {
 ```{r}
 bartstops <- read.csv("/Users/alisanford/Desktop/statsfinalproject/statsquad/sfstops/BARTclean.csv")
 bartstop_coords <- bartstops %>%
-  filter(Zipcode %in% emissionsdataSF$ZipCode) %>%
+  filter(Zipcode %in% emissionsdataSF1$ZipCode) %>%
   select(`Name`, `Latitude`, `Longitude`) %>%
   mutate(Latitude = as.numeric(Latitude), Longitude = as.numeric(Longitude))
 
@@ -217,12 +217,12 @@ for (k in 1:nrow(emissionsdataSF1)) {
 ```{r}
 emissionsdataLA1$incomelevels <- cut(emissionsdataLA1$IncomePerHousehold, 
                        breaks = c(-Inf, 40000, 60000, 80000, 100000, Inf), 
-                       labels = c("1", "2", "3", "4", "5"), 
+                       labels = c("$0-$40K", "$40K-$60K", "$60K-$80K", "$80K-$100K", "$100K+"), 
                        right = FALSE)
 
 emissionsdataSF1$incomelevels <- cut(emissionsdataSF1$IncomePerHousehold, 
                        breaks = c(-Inf, 40000, 60000, 80000, 100000, Inf), 
-                       labels = c("1", "2", "3", "4", "5"), 
+                       labels = c("$0-$40K", "$40K-$60K", "$60K-$80K", "$80K-$100K", "$100K+"), 
                        right = FALSE)
 
 LAnarrow <- emissionsdataLA1 %>%
@@ -235,14 +235,14 @@ SFnarrow <- emissionsdataSF1 %>%
 
 ```{r}
 lacolortest <- emissionsdataLA1 %>%
-  ggplot(aes(x = within3km, y = `Transport(tCO2e/yr)`, group = incomelevels, col = incomelevels)) + geom_point() + stat_smooth(method = "loess", se = FALSE)
+  ggplot(aes(x = within3km, y = `Transport(tCO2e/yr)`, group = incomelevels, col = incomelevels)) + geom_point(alpha = 0.4) + stat_smooth(method = "lm", se = FALSE)
 lacolortest
 
 ```
 
 ```{r}
 sfcolortest <- emissionsdataSF1 %>%
-  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`, group = incomelevels, col = incomelevels)) + geom_point() + stat_smooth(method = "loess", se = FALSE)
+  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`, group = incomelevels, col = incomelevels)) + geom_point() + stat_smooth(method = "lm", se = FALSE)
 sfcolortest
 
 ```
@@ -252,26 +252,146 @@ sfcolortest
 
 ```{r}
 laplotfaceted <- LAnarrow %>%
-  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`)) + 
-  geom_point() + 
-  stat_smooth(method = "loess") + facet_grid(. ~ distance) +
-  labs(title="San Franciscio Emissions Data", x="Number of stops within", y="Tons of CO2 emissions per year due to Transportation")
+  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`, col = distance)) + 
+  geom_point(alpha = .4) + 
+  stat_smooth(method = "loess") + facet_grid(. ~ distance, switch = "both") +
+  labs(title="Carbon Emissions vs Public Transit Stops - Los Angeles", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
 laplotfaceted
 ```
 
 
 ```{r}
 sfplotfaceted <- SFnarrow %>%
-  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "loess") + facet_grid(. ~ distance)
+  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`, col = distance)) + geom_point(alpha = .4) + stat_smooth(method = "loess") + facet_grid(. ~ distance, switch = "both") +
+  labs(title="Carbon Emissions vs Public Transit Stops - San Francisco", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
 sfplotfaceted
+```
+
+
+```{r}
+LAnarrow$incomelevels <- cut(emissionsdataLA1$IncomePerHousehold, 
+                       breaks = c(-Inf, 40000, 60000, 80000, 100000, Inf), 
+                       labels = c("1", "2", "3", "4", "5"), 
+                       right = FALSE)
+```
+
+```{r}
+max(emissionsdataLA1$within1km)
+max(emissionsdataSF1$within1km)
 ```
 
 
 
 
+```{r}
+emissionsdataLA1$stoplevels <- cut(emissionsdataLA1$within1km, 
+                       breaks = c(-Inf, 25, 50, 75, 100, 125, 150, 175, 200, Inf), 
+                       labels = c("0-25", "26-50", "51-75", "76-100", "101-125", "126-150", "151-175", "176-200", "201+"), 
+                       right = FALSE)
+
+emissionsdataSF1$stoplevels <- cut(emissionsdataSF1$within1km, 
+                       breaks = c(-Inf, 25, 50, 75, 100, 125, 150, 175, 200, Inf), 
+                       labels = c("0-25", "26-50", "51-75", "76-100", "101-125", "126-150", "151-175", "176-200", "201+"), 
+                       right = FALSE)
+
+emissionsdataLA1$emissionlevels <- cut(emissionsdataLA1$`Transport(tCO2e/yr)`, 
+                       breaks = c(-Inf, 5, 10, 15, 20, 25, 30, 35, 40, Inf), 
+                       labels = c("0-5", "6-10", "11-15", "16-20", "21-25", "26-30", "31-35", "36-40", "41+"), 
+                       right = FALSE)
+
+emissionsdataSF1$emissionlevels <- cut(emissionsdataSF1$`Transport(tCO2e/yr)`, 
+                       breaks = c(-Inf, 5, 10, 15, 20, 25, 30, 35, 40, Inf), 
+                       labels = c("0-5", "6-10", "11-15", "16-20", "21-25", "26-30", "31-35", "36-40", "41+"), 
+                       right = FALSE)
+```
+
+```{r}
+ggplot(emissionsdataLA1, aes(x = incomelevels, fill = stoplevels)) +
+  geom_bar(position = "fill") +
+  scale_fill_brewer()
+```
+
+
+```{r}
+ggplot(emissionsdataLA1, aes(x = stoplevels, fill = emissionlevels)) +
+  geom_bar(position = "fill", alpha = 0.6) +
+  scale_fill_brewer(palette = "Spectral") +
+  labs(title="Number of Stops vs Emission Levels - LA", x="Number of stops within 1km", legend = "Carbon Emissions from Transportation (tons/yr)")
+```
+
+```{r}
+ggplot(emissionsdataSF1, aes(x = stoplevels, fill = emissionlevels)) +
+  geom_bar(position = "fill", alpha = 0.6) +
+  scale_fill_brewer(palette = "Spectral") +
+  labs(title="Number of Stops vs Emission Levels - SF", x="Number of stops within 1km", legend = "Carbon Emissions from Transportation (tons/yr)")
+```
+
+```{r}
+laplotfaceted2 <- emissionsdataLA1 %>%
+  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`)) + 
+  geom_point() + 
+  stat_smooth(method = "lm", se = FALSE) + facet_grid(. ~ incomelevels)
+laplotfaceted2
+```
+
+```{r}
+sfplotfaceted2 <- emissionsdataSF1 %>%
+  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`)) + 
+  geom_point() + 
+  stat_smooth(method = "lm", se = FALSE) + facet_grid(. ~ incomelevels)
+sfplotfaceted2
+```
+
+```{r}
+ggplot(emissionsdataLA1, aes(x = `IncomePerHousehold`, y = `Transport(tCO2e/yr)`, group = stoplevels, color = stoplevels)) + geom_point(alpha = 0.3) + stat_smooth(method = "lm", se = FALSE)
+```
+```{r}
+ggplot(emissionsdataSF1, aes(x = `IncomePerHousehold`, y = `Transport(tCO2e/yr)`, group = stoplevels, color = stoplevels)) + geom_point(alpha = 0.3) + stat_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+ggplot(emissionsdataLA1, aes(x = Population, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "lm")
+```
+
+```{r}
+ggplot(emissionsdataSF1, aes(x = Population, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "lm")
+```
+
+```{r}
+laadjustedemissions <- emissionsdataLA1 %>%
+  ggplot(aes(x = within3km, y = `Transport(tCO2e/yr)`/Population)) + geom_point(alpha = .2) + stat_smooth(method = "loess") + ylim(0, .01) + xlim(0, 500)
+laadjustedemissions
+```
+
+```{r}
+
+laadjustedemissions <- emissionsdataLA1 %>%
+  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`/Population)) + geom_point(alpha = .2) + stat_smooth(method = "lm") + ylim(0, .005) + xlim(0, 100)
+laadjustedemissions
+```
+
+```{r}
+bothcityemissionsdata <- rbind(emissionsdataLA1, emissionsdataSF1)
+bothnarrow <- rbind(LAnarrow, SFnarrow)
+
+bothplotfaceted <- bothnarrow %>%
+  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`, col = distance)) + 
+  geom_point(alpha = .4) + 
+  stat_smooth(method = "loess") + facet_grid(CITYNAME ~ distance, switch = "both") +
+  labs(title="Carbon Emissions vs Public Transit Stops - Los Angeles", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
+bothplotfaceted
+```
 
 
 
+
+```{r}
+write.csv(LAnarrow, "/Users/alisanford/Desktop/statsfinalproject/statsquad/LAnarrow.csv")
+write.csv(SFnarrow, "/Users/alisanford/Desktop/statsfinalproject/statsquad/SFnarrow.csv")
+write.csv(emissionsdataLA1, "/Users/alisanford/Desktop/statsfinalproject/statsquad/emissionsdataLA1.csv")
+write.csv(emissionsdataSF1, "/Users/alisanford/Desktop/statsfinalproject/statsquad/emissionsdataSF1.csv")
+
+```
 
 
 
