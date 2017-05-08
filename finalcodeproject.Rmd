@@ -5,6 +5,9 @@ date: "5/6/2017"
 output: html_document
 
 ---
+
+_Data containing highway traffic, average traffic per zipcode, railroad stations in California, emissions in California, and California zipcodes and county code sorting._
+
 ```{r setup, include=FALSE}
 library(DataComputing)
 library(dplyr)
@@ -18,16 +21,16 @@ library(rgdal)
 library(maps)
 library(rgeos)
 library(shapefiles)
+library(readr)
 setwd("~/Desktop")
 ```
-
 
 
 ```{r, echo = TRUE}
 X2015aadt <- read.csv("~/Desktop/133_data/AADT/2015aadt.csv", stringsAsFactors = FALSE)
 
 names(X2015aadt)
-class(X2015aadt)
+
 X2015AADT <- data.frame(X2015aadt)
 colnames(X2015AADT)[3] = "Abbreviation"
 X2015AADT=X2015AADT[c(-5)]
@@ -35,11 +38,8 @@ X2015AADT=X2015AADT[c(-5)]
 X2015AADT$`Back.Peak.Hour` <- as.numeric(X2015AADT$`Back.Peak.Hour`)
 X2015AADT$`Ahead.Peak.Hour` <- as.numeric(X2015AADT$`Ahead.Peak.Hour`)
 class(X2015AADT)
-## make graph of highest volume days...
-## make graph of the days of AADT
-## makegraph of busiest routes
-
 ```
+
 
 ```{r}
 library(XML)
@@ -101,13 +101,12 @@ head(ABBR)
 ZipGEO <- DataComputing::ZipGeography %>% filter(State=="California") %>% select(Latitude, Longitude, ZIP)
 colnames(ZipGEO)[3] = "Zip Codes"
 finalzips <- ZipGEO %>% left_join(ABBR, by="Zip Codes")
-
 head(finalzips)
 ```
 
 
 ```{r}
-##maped a base map by county in order to use it for future plots
+##mapped a base map by county in order to use it for future plots
 states <- map_data("state")
 ca_counties <- subset(states, region == "california")
 counties <- map_data("county")
@@ -127,7 +126,6 @@ print(CA_base)
 zipemissions <- read_csv("~/Downloads/statsquad-master/zipemissions.csv")
 zipemissions <- zipemissions %>% filter(State=="CA") %>% select( ZipCode, Population, HouseholdsPerZipCode, Latitude, Longitude, CountyName, popden, Vehiclemilestraveled, `Transport(tCO2e/yr)` ) 
 head(zipemissions)
-
 colnames(zipemissions)[6] = "County"
 
 zipAVG <- aggregate(zipemissions[ , 8:9], list(zipemissions$County), mean) 
@@ -144,12 +142,14 @@ colnames(zipmax)[1] = "County"
 colnames(zipmax)[2] = "VMT max"
 colnames(zipmax)[3] = "trans max"
 
-rangetable <- zipmin %>% join(zipAVG, by="County")
-range_final <- rangetable %>% join(zipmax, by="County")
+rangetable <- zipmin %>% merge(zipAVG, by="County")
+range_final <- rangetable %>% merge(zipmax, by="County")
 t.test(range_final$`VMT avg`, range_final$`trans avg`)
 ```
 
+
 ```{r}
+library(ggrepel)
 avg_plot <- range_final %>% ggplot(aes(x = `VMT avg`, y=`trans avg`)) + 
   geom_point(alpha = .8, col="#660066") +
   geom_smooth(method = lm, se=FALSE, col="#CC99CC") +
@@ -170,9 +170,7 @@ setwd("/Users/allegrasaggese/Desktop/133_data/RS13")
 myshp <- readOGR(".", layer="Rail_Sta_13")
 names(myshp)
 print(proj4string(myshp))
-
 ```
-
 
 ```{r}
 attributes(myshp)
@@ -185,11 +183,6 @@ RS_df_final <-fortify(RS_df)
 RS_df_final <- RS_df_final %>% select(STATION, ZIP, COMM_NETWO, DIST, CO)
 colnames(RS_df_final)[5] = "Abbreviation"
 head(RS_df_final)
-
-for(i in unique(RS_df_final$ZipCode)) {
-  count(total=n(STATIONS))
-  } return(total)
-
 ```
 
 ```{r}
@@ -200,12 +193,12 @@ print(proj4string(aadtshp))
 
 AADT_df <- as.data.frame(aadtshp)
 AADT_df %>% vapply(is.numeric, FUN.VALUE = TRUE)
-
 AADT_df_final <-  fortify(AADT_df)
+##fortifying the data makes it easier for R to read
 ```
 
 ```{r}
-Back_AADT <- as.numeric(AADT_df_final$Back_AADT)
+Back_AADT <- as.numeric(AADT_df_final$`Back_AADT`)
 class(Back_AADT)
 Back_pk_h <- as.numeric(AADT_df_final$Back_pk_h)
 Longitude <- colnames(AADT_df_final$coords.x1)
@@ -228,18 +221,17 @@ range_map
 ```
 
 ```{r}
-vmtbox <- ggplot(zipemissions)+ geom_histogram(aes(x=zipemissions$popden))
-vmtbox
 
-
-  theme_grey() + 
+vmtbox <- ggplot(zipemissions, aes(zipemissions$`Transport(tCO2e/yr)`)) + geom_histogram(aes(x=zipemissions$`Transport(tCO2e/yr)`, colour=as.integer(popden), group=popden), binwidth = 1, bins = 5) +
+  theme_light() + 
+  scale_color_gradient(name="Population Density", low = "blue", high = "red") +
   theme(
     axis.line = element_line(color = "black"),
     axis.ticks = element_line(color = "black")) +
-  labs(title="Average CO2 vs. Range of Vehicle Miles Traveled by California County",
+  labs(title="Average CO2 From Transportation with Population Density by Zipcode",
        x="Average CO2 from Transportation (Tons/Year)",
-       y="Vehicle Miles Traveled (Miles/Year)") ##second plot
-
+       y="Count") ##second plot
+vmtbox
 ```
 
 ```{r}
@@ -255,15 +247,42 @@ zipcoords <- data.frame(logs, lats, County) ##new dataframe that holds unique lo
 avg_table <- zipcoords %>% left_join(zipAVG)
 head(avg_table)
 ##filtered for the averages of the total vehicle miles traveled and trasportation CO2 in order to plot via county 
+
+co2 <- ggplot(zipAVG, aes(x=`County`, y=zipAVG$`VMT avg`)) + 
+  geom_point(aes(x=`County`, colour=as.integer(`trans avg`), group=`trans avg`)) +
+  geom_text_repel(aes(label=zipAVG$County), size=2, segment.colour = "grey", segment.alpha = .5) + 
+  theme_light() + 
+  scale_color_gradient(name="Transportation Emissions Average", low = "pink", high = "red") +
+  theme(axis.text.x = element_blank()) +
+  labs(title = "Average Vehicle Miles Traveled by County") +
+       ylab(label="Average Vehicle Miles Traveled") +
+       xlab(label="California Counties (Alphabetical)")
+co2
+  
+```
+
+```{r}
+##sorting by unique stations, going to join with zipcode data 
+stations <- unique(RS_df_final)
+names(stations)[names(stations) == "ZIP"] <- "ZipCode"
+zipemissions$ZipCode <-as.numeric(zipemissions$ZipCode)
+stations$ZipCode <-as.numeric(stations$ZipCode)
+
+
+zipemissions_1 <- zipemissions %>% right_join(stations, by=`ZipCode`)
+head(zipemissions_1)
 ```
 
 
 ```{r, eval=TRUE}
-VMTby_county <- ggplot(data=zipemissions, aes(x=`Vehiclemilestraveled`)) + 
-  geom_histogram(binwidth = 500) + geom_abline(aes(slope=1, intercept=mean(zipemissions$Vehiclemilestraveled)))
+VMTby_county <- 
+  ggplot(data=zipemissions, aes(x=`Vehiclemilestraveled`, fill=as.integer(Population), group=Population)) + 
+  geom_histogram(binwidth = 500) + 
+  geom_abline(aes(slope=1, intercept=mean(zipemissions$Vehiclemilestraveled))) + 
+  theme() +
+  scale_fill_continuous(name="Total Population", high = "green", low = "blue")
 
 print(VMTby_county)
-
 ```
 
 ```{r}
@@ -278,7 +297,10 @@ ordered_colors <- rainbow(length(aadtshp$Back_AADT))[order(order(aadtshp$Back_AA
 density_map_AADT <- ggplot() + 
   geom_polygon(data=california, mapping=aes(x=long, y=lat, group=group), color="white") + 
   coord_fixed(ylim = 32:43, xlim = -125:-113) +
-  geom_point(data = aadtshp, size = .01, aes(x=aadtshp$Lon_S_or_W, y=aadtshp$Lat_S_or_W, color=factor(aadtshp$Back_AADT)), show.legend=FALSE) + theme_classic() + labs(title="Annual Average Daily Traffic for Highways in California")
+  geom_point(data = aadtshp, size = .01, aes(x=aadtshp$Lon_S_or_W, y=aadtshp$Lat_S_or_W, color=factor(aadtshp$Back_AADT)), show.legend=FALSE) + 
+  theme_classic() +
+  labs(title="Annual Average Daily Traffic for Highways in California") +
+  scale_fill_gradient()
 
 
 density_map_AADT
@@ -287,9 +309,18 @@ density_map_AADT
 ```{r}
 ##mapping average vehicle miles traveled by county on a map & average C02 emissions, then I will also map the highest areas of traffic and the public transit stops to see if there is any correlation 
 
-VMTmap <- CA_base + stat_density_2d(aes(x = logs, y = lats, fill = ..level.., alpha = ..level.., size = 4, data=zipAVG, geom=polygon))
+CAmap2 <- ggplot() +
+  geom_polygon(data = california, aes(x=long, y=lat, group=group), fill = "#CCCCCC") +
+  coord_fixed(1)
+ 
+VMTmap <- CAmap2 + geom_point(zipemissions, mapping = aes(x = Longitude, y = Latitude, color= as.integer(`Vehiclemilestraveled`), group=`Vehiclemilestraveled`), geom = GeomPoint, size = .1) + scale_color_continuous(low = "blue", high = "red", guide = "colourbar") + 
+  labs(title= "Average Vehicle Miles Traveled Annually by Zipcode in California") +
+  xlab(label = "Longitude") + 
+  ylab(label = "Latitude") +
+  theme(title = element_text(size = 10, color = "black"), 
+        legend.title = element_text(face = "bold")) 
 
-print(VMTmap)
+VMTmap
 ```
 
 
@@ -301,6 +332,23 @@ Ahead.AADT <- as.numeric(Fulltable$Ahead.AADT)
 
 traffic_boxplot <- boxplot(Fulltable$Back.Peak.Hour ~ Fulltable$Back.AADT, range = 10, names(County))
 ```
+```{r}
+
+CAmap2 <- ggplot() +
+  geom_polygon(data = california, aes(x=long, y=lat, group=group), fill = "#CCCCCC") +
+  coord_fixed(1)
+
+AADTmap <- CAmap2 + stat_density(AADT_df_final, mapping = aes(x = AADT_df_final$`coords.x1`, y = AADT_df_final$`coords.x2`, color= as.integer(`Back_AADT`), group=`Back_AADT`), geom= "area") + 
+  labs(title= "bob") +
+  xlab(label = "Longitude") + 
+  ylab(label = "Latitude") +
+  theme(title = element_text(size = 10, color = "black"), 
+        legend.title = element_text(face = "bold")) 
+
+AADTmap
+```
+
+
 
 ```{r}
 ##machine learning algorithm - looking only at SF COUNTY, can we predict what is the greatest/most influential factor for CO2 emissions is? And can we hypothesize WHY CO2 emissions are higher than predicted in previous plot (C02 v VMT by COUNTY)
