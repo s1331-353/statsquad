@@ -8,7 +8,8 @@ output: html_document
 ```{r setup, include=FALSE}
 library(DataComputing)
 library(dplyr)
-library(geosphere) #contains the distance function that we used
+library(geosphere) 
+#contains the distance function that we used
 library(ggplot2)
 library(tidyr)
 library(statisticalModeling)
@@ -17,39 +18,54 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-emissionsdata <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/zipemissions.txt", fill = TRUE) #imported data obtained from UC Berkeley's CoolClimate Network. Data includes info about carbon emissions for each zip code in the US, and some identifying information about each zip code.
+emissionsdata <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/zipemissions.txt", fill = TRUE) 
+#import data obtained from UC Berkeley's CoolClimate Network. Data includes info about carbon emissions for each zip code in the US, and some identifying information about each zip code.
 
-colnames(emissionsdata) = as.character(unlist(emissionsdata[1,])) #made the first row of the emissionsdata df into the column names
-emissionsdata = emissionsdata[-1,] #deleted the first row (containing column names)
+colnames(emissionsdata) = as.character(unlist(emissionsdata[1,])) 
+#make the first row of the emissionsdata df into the column names
+emissionsdata = emissionsdata[-1,] #delete the first row (containing column names)
 
 ```
 
 ```{r}
-emissionsdataLA1 <- emissionsdata %>% #made a Los Angeles-specific df of emissions data
-  filter(CountyName == "LOSANGELES") %>% #pulled out info only for zipcodes within Los Angeles County
-  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`) %>% #selected only variables that might be relevant to our analysis
-  mutate(`Latitude` = as.numeric(paste(`Latitude`)), `Longitude` = as.numeric(paste(`Longitude`)), `IncomePerHousehold` = as.numeric(paste(`IncomePerHousehold`)), `Transport(tCO2e/yr)` = as.numeric(paste(`Transport(tCO2e/yr)`)), `AverageHouseValue` = as.numeric(paste(`AverageHouseValue`)), `Population` = as.numeric(paste(`Population`)))
+emissionsdataLA1 <- emissionsdata %>% 
+  #make a Los Angeles-specific df of emissions data
+  filter(CountyName == "LOSANGELES") %>% 
+  #pull out info only for zipcodes within Los Angeles County
+  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`) %>% 
+  #select only variables that might be relevant to our analysis
+  mutate(`Latitude` = as.numeric(paste(`Latitude`)), `Longitude` = as.numeric(paste(`Longitude`)), `IncomePerHousehold` = as.numeric(paste(`IncomePerHousehold`)), `Transport(tCO2e/yr)` = as.numeric(paste(`Transport(tCO2e/yr)`)), `AverageHouseValue` = as.numeric(paste(`AverageHouseValue`)), `Population` = as.numeric(paste(`Population`))) 
+#chang factor variables to numeric ones, using paste to ensure the correct values, rather than their levels, are converted to the numeric entries of each variable column
 
 emissionsdataLA1$within1km <- rep(0,nrow(emissionsdataLA1))
 emissionsdataLA1$within2km <- rep(0,nrow(emissionsdataLA1))
-emissionsdataLA1$within3km <- rep(0,nrow(emissionsdataLA1))
+emissionsdataLA1$within3km <- rep(0,nrow(emissionsdataLA1)) 
+#add three columns populated with zeroes that information will be added to later
 
-emissionsdataSF1 <- emissionsdata %>% #made a Los Angeles-specific df of emissions data
-  filter(CountyName == "SANFRANCISCO") %>% #pulled out info only for zipcodes within SF County
-  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`) %>% #selected only variables that might be relevant to our analysis
-  mutate(`Latitude` = as.numeric(paste(`Latitude`)), `Longitude` = as.numeric(paste(`Longitude`)), `IncomePerHousehold` = as.numeric(paste(`IncomePerHousehold`)), `Transport(tCO2e/yr)` = as.numeric(paste(`Transport(tCO2e/yr)`)), `AverageHouseValue` = as.numeric(paste(`AverageHouseValue`)), `Population` = as.numeric(paste(`Population`)))
+emissionsdataSF1 <- emissionsdata %>% 
+  #make a San Francisco-specific df of emissions data
+  filter(CountyName == "SANFRANCISCO") %>% 
+  #pull out info only for zipcodes within SF County
+  select(`ZipCode`, `Population`, `HouseholdsPerZipCode`, `PersonsPerHousehold`, `AverageHouseValue`, `IncomePerHousehold`, `Latitude`, `Longitude`, `CountyName`, `popden`, `electricity(kWh)`, `Nat.Gas(cu.ft.)`, `FUELOIL(gallons)`, `Vehiclemilestraveled`, `Transport(tCO2e/yr)`) %>% 
+  #select only variables that might be relevant to our analysis
+  mutate(`Latitude` = as.numeric(paste(`Latitude`)), `Longitude` = as.numeric(paste(`Longitude`)), `IncomePerHousehold` = as.numeric(paste(`IncomePerHousehold`)), `Transport(tCO2e/yr)` = as.numeric(paste(`Transport(tCO2e/yr)`)), `AverageHouseValue` = as.numeric(paste(`AverageHouseValue`)), `Population` = as.numeric(paste(`Population`))) 
+#chang factor variables to numeric ones, using paste to ensure the correct values, rather than their levels, are converted to the numeric entries of each variable column
 
 emissionsdataSF1$within1km <- rep(0,nrow(emissionsdataSF1))
 emissionsdataSF1$within2km <- rep(0,nrow(emissionsdataSF1))
-emissionsdataSF1$within3km <- rep(0,nrow(emissionsdataSF1))
+emissionsdataSF1$within3km <- rep(0,nrow(emissionsdataSF1)) 
+#add three columns populated with zeroes that information will be added to later
 ```
 
 
 ```{r}
-metrobus <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/metrobusstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
+metrobus <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/metrobusstops.txt", fill=TRUE, header=TRUE, quote="", sep=",") 
+#load .txt file of metro bus stop data 
 metrobus_coords <- metrobus %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
+  #select only the name, latitude, and longitude variables
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon)) 
+#change factor variables to numeric ones, using paste to ensure the correct values, rather than their levels, are converted to the numeric entries of each variable column
 
 metrorail <- read.table("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastops/metrorailstops.txt", fill=TRUE, header=TRUE, quote="", sep=",")
 metrorail_coords <- metrorail %>%
@@ -100,37 +116,47 @@ torrancetransit <- read.table("/Users/alisanford/Desktop/statsfinalproject/stats
 torrancetransit_coords <- torrancetransit %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
+
+#same process for each transit system
 ```
 
 
 ```{r}
 allLAstop_coords <- rbind(metrobus_coords, metrorail_coords, bigbluebus_coords, burbankbus_coords, culvercitybus_coords, dash_coords, foothilltransit_coords, gardenatransit_coords, longbeachtransit_coords, beachbus_coords, torrancetransit_coords)
+#collect all seperate LA transit system stop coordinates into one dataframe
 
 allLAstop_coords_unique <- unique(allLAstop_coords)
+#eliminate repeated stops
 
 allLAstop_coords1 <- allLAstop_coords_unique[complete.cases(allLAstop_coords_unique), ]
+#drop cases with NA
 ```
 
 
 ```{r}
-for (i in 1:nrow(emissionsdataLA1)) {
+for (i in 1:nrow(emissionsdataLA1)) { #take 1 LA zip code at a time
   d1 = 0
   d2 = 0
-  d3 = 0
+  d3 = 0 
+  #define three counters
   a <- emissionsdataLA1$Longitude[i] 
-  b <- emissionsdataLA1$Latitude[i] 
+  b <- emissionsdataLA1$Latitude[i]
+  #map zip code longitude and latitude to variables
   dist <- c()
-  
-    for (j in 1:nrow(allLAstop_coords1)) {
+  #create empty vector to store distances to each stop
+    for (j in 1:nrow(allLAstop_coords1)) { #take 1 transit stop at a time
       e <- allLAstop_coords1$stop_lon[j]
       f <- allLAstop_coords1$stop_lat[j]
+      #map stop longitude and latitude to variables
       dist[j] = distHaversine(c(a, b),
                               c(e, f))
+      #store distance between zip code and stop in dist
       
-      if (dist[j] < 1000) {
+      if (dist[j] < 1000) { #check if each entry in dist was less than 1000
         d1 = d1 + 1
         d2 = d2 + 1
         d3 = d3 + 1
+        #add to counters
       } else if (dist[j] < 2000 & dist[j] > 1000) {
         d2 = d2 + 1
         d3 = d3 + 1
@@ -141,6 +167,7 @@ for (i in 1:nrow(emissionsdataLA1)) {
     emissionsdataLA1$within1km[i] = d1
     emissionsdataLA1$within2km[i] = d2
     emissionsdataLA1$within3km[i] = d3
+    #write counters to data frame
           }
     }
 ```
@@ -169,6 +196,7 @@ actransit_coords <- actransitstops %>%
   select(`stop_name`, `stop_lat`, `stop_lon`) %>% 
   mutate(stop_lat = as.numeric(stop_lat), stop_lon = as.numeric(stop_lon))
 
+#same process as for LA transit systems
 ```
 
 ```{r}
@@ -224,26 +252,41 @@ emissionsdataSF1$incomelevels <- cut(emissionsdataSF1$IncomePerHousehold,
                        breaks = c(-Inf, 40000, 60000, 80000, 100000, Inf), 
                        labels = c("$0-$40K", "$40K-$60K", "$60K-$80K", "$80K-$100K", "$100K+"), 
                        right = FALSE)
+#create clusters based on average income
 
 LAnarrow <- emissionsdataLA1 %>%
   gather(key=distance, value=number_of_stops, `within1km`, `within2km`, `within3km` )
 
 SFnarrow <- emissionsdataSF1 %>%
   gather(key=distance, value=number_of_stops, `within1km`, `within2km`, `within3km` )
+
+#create narrow data frames 
 ```
+
 
 
 ```{r}
 lacolortest <- emissionsdataLA1 %>%
   ggplot(aes(x = within3km, y = `Transport(tCO2e/yr)`, group = incomelevels, col = incomelevels)) + geom_point(alpha = 0.4) + stat_smooth(method = "lm", se = FALSE)
-lacolortest
+lacolortest +
+     labs(title="Number of Close Stops vs Transportation Emissions - LA", x="Stops within 3km", y="CO2 emissions due to Transportation (tons/year)", legend = "Income Levels")
+#plot number of close stops against emissions, grouped by income
+ggsave("/Users/alisanford/Desktop/statsfinalproject/statsquad/stopsvstransportationla1.png")
+#save image of plot
 
-```
-
-```{r}
 sfcolortest <- emissionsdataSF1 %>%
   ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`, group = incomelevels, col = incomelevels)) + geom_point() + stat_smooth(method = "lm", se = FALSE)
-sfcolortest
+sfcolortest +
+       labs(title="Number of Close Stops vs Transportation Emissions - SF", x="Number of Stops within 1km", y="CO2 emissions due to Transportation (tons/year)", legend = "Income Levels")
+
+ggsave("/Users/alisanford/Desktop/statsfinalproject/statsquad/stopsvstransportationsf1.png")
+```
+
+
+
+
+```{r}
+
 
 ```
 
@@ -255,29 +298,18 @@ laplotfaceted <- LAnarrow %>%
   ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`, col = distance)) + 
   geom_point(alpha = .4) + 
   stat_smooth(method = "loess") + facet_grid(. ~ distance, switch = "both") +
-  labs(title="Carbon Emissions vs Public Transit Stops - Los Angeles", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
+  labs(title="Carbon Emissions vs Public Transit Stops - Los Angeles", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)") + scale_colour_manual(values = c("#669900", "#00cc99", "#cc33ff"))
 laplotfaceted
-```
+ggsave("/Users/alisanford/Desktop/statsfinalproject/statsquad/facetedla.png")
 
-
-```{r}
 sfplotfaceted <- SFnarrow %>%
   ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`, col = distance)) + geom_point(alpha = .4) + stat_smooth(method = "loess") + facet_grid(. ~ distance, switch = "both") +
-  labs(title="Carbon Emissions vs Public Transit Stops - San Francisco", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
+  labs(title="Carbon Emissions vs Public Transit Stops - San Francisco", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)") + scale_colour_manual(values = c("#669900", "#00cc99", "#cc33ff"))
 sfplotfaceted
-```
+ggsave("/Users/alisanford/Desktop/statsfinalproject/statsquad/facetedsf.png")
+#plot number of stops within a certain distance against carbon emissions, faceted by distance  
 
 
-```{r}
-LAnarrow$incomelevels <- cut(emissionsdataLA1$IncomePerHousehold, 
-                       breaks = c(-Inf, 40000, 60000, 80000, 100000, Inf), 
-                       labels = c("1", "2", "3", "4", "5"), 
-                       right = FALSE)
-```
-
-```{r}
-max(emissionsdataLA1$within1km)
-max(emissionsdataSF1$within1km)
 ```
 
 
@@ -293,6 +325,7 @@ emissionsdataSF1$stoplevels <- cut(emissionsdataSF1$within1km,
                        breaks = c(-Inf, 25, 50, 75, 100, 125, 150, 175, 200, Inf), 
                        labels = c("0-25", "26-50", "51-75", "76-100", "101-125", "126-150", "151-175", "176-200", "201+"), 
                        right = FALSE)
+#create clusters of zip codes by number of stops within one kilometer of them
 
 emissionsdataLA1$emissionlevels <- cut(emissionsdataLA1$`Transport(tCO2e/yr)`, 
                        breaks = c(-Inf, 5, 10, 15, 20, 25, 30, 35, 40, Inf), 
@@ -303,84 +336,69 @@ emissionsdataSF1$emissionlevels <- cut(emissionsdataSF1$`Transport(tCO2e/yr)`,
                        breaks = c(-Inf, 5, 10, 15, 20, 25, 30, 35, 40, Inf), 
                        labels = c("0-5", "6-10", "11-15", "16-20", "21-25", "26-30", "31-35", "36-40", "41+"), 
                        right = FALSE)
+#create clusters of zip codes by their carbon emissions
 ```
 
-```{r}
-ggplot(emissionsdataLA1, aes(x = incomelevels, fill = stoplevels)) +
-  geom_bar(position = "fill") +
-  scale_fill_brewer()
-```
 
 
 ```{r}
 ggplot(emissionsdataLA1, aes(x = stoplevels, fill = emissionlevels)) +
   geom_bar(position = "fill", alpha = 0.6) +
-  scale_fill_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral", direction = -1) +
   labs(title="Number of Stops vs Emission Levels - LA", x="Number of stops within 1km", legend = "Carbon Emissions from Transportation (tons/yr)")
-```
+ggsave("/Users/alisanford/Desktop/statsfinalproject/statsquad/lastopsvsemissions.png")
 
-```{r}
 ggplot(emissionsdataSF1, aes(x = stoplevels, fill = emissionlevels)) +
   geom_bar(position = "fill", alpha = 0.6) +
-  scale_fill_brewer(palette = "Spectral") +
+  scale_fill_brewer(palette = "Spectral", direction = -1) +
   labs(title="Number of Stops vs Emission Levels - SF", x="Number of stops within 1km", legend = "Carbon Emissions from Transportation (tons/yr)")
+ggsave("/Users/alisanford/Desktop/statsfinalproject/statsquad/sfstopsvsemissions.png")
+
+#plot number of stops vs emission levels
 ```
 
-```{r}
-laplotfaceted2 <- emissionsdataLA1 %>%
-  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`)) + 
-  geom_point() + 
-  stat_smooth(method = "lm", se = FALSE) + facet_grid(. ~ incomelevels)
-laplotfaceted2
-```
+
 
 ```{r}
-sfplotfaceted2 <- emissionsdataSF1 %>%
-  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`)) + 
-  geom_point() + 
-  stat_smooth(method = "lm", se = FALSE) + facet_grid(. ~ incomelevels)
-sfplotfaceted2
+ggplot(emissionsdataLA1, aes(x = `IncomePerHousehold`, y = `Transport(tCO2e/yr)`, group = stoplevels, color = stoplevels)) + geom_point(alpha = 0.3) + stat_smooth(method = "lm", se = FALSE) +
+    labs(title="Income Per Household vs Transportation Emissions - LA", x="Average Income Per Household", y="CO2 emissions due to Transportation (tons/year)", legend = "stops within 1 km")
+ggsave("/Users/alisanford/Desktop/statsfinalproject/statsquad/laincomevsemissions.png")
+
+ggplot(emissionsdataSF1, aes(x = `IncomePerHousehold`, y = `Transport(tCO2e/yr)`, group = stoplevels, color = stoplevels)) + geom_point(alpha = 0.3) + stat_smooth(method = "lm", se = FALSE) +     
+  labs(title="Income Per Household vs Transportation Emissions - SF", x="Average Income Per Household", y="CO2 emissions due to Transportation (tons/year)", legend = "stops within 1 km")
+ggsave("/Users/alisanford/Desktop/statsfinalproject/statsquad/sfincomevsemissions.png")
+
+#plot income per household vs emissions, grouped by number of stops
 ```
 
-```{r}
-ggplot(emissionsdataLA1, aes(x = `IncomePerHousehold`, y = `Transport(tCO2e/yr)`, group = stoplevels, color = stoplevels)) + geom_point(alpha = 0.3) + stat_smooth(method = "lm", se = FALSE)
-```
-```{r}
-ggplot(emissionsdataSF1, aes(x = `IncomePerHousehold`, y = `Transport(tCO2e/yr)`, group = stoplevels, color = stoplevels)) + geom_point(alpha = 0.3) + stat_smooth(method = "lm", se = FALSE)
-```
+
 
 ```{r}
 ggplot(emissionsdataLA1, aes(x = Population, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "lm")
-```
 
-```{r}
 ggplot(emissionsdataSF1, aes(x = Population, y = `Transport(tCO2e/yr)`)) + geom_point() + stat_smooth(method = "lm")
+
+#check for correlation between population and transportation emissions
 ```
+
 
 ```{r}
 laadjustedemissions <- emissionsdataLA1 %>%
-  ggplot(aes(x = within3km, y = `Transport(tCO2e/yr)`/Population)) + geom_point(alpha = .2) + stat_smooth(method = "loess") + ylim(0, .01) + xlim(0, 500)
+  ggplot(aes(x = within3km, y = `Transport(tCO2e/yr)`/Population)) + geom_point(alpha = .2) + stat_smooth(method = "loess") + ylim(0, .02) + xlim(0, 500) +
+      labs(title="Number of Stops vs Transportation, adjusted for Population - LA", x="Number of Stops within 3km", y="Transportation Emissions/Zip Code Population (tons per year per person)")
+ggsave("/Users/alisanford/Desktop/statsfinalproject/statsquad/laadjustedforpop2.png")
 laadjustedemissions
+
+sfadjustedemissions <- emissionsdataSF1 %>%
+  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`/Population)) + geom_point(alpha = .2) + stat_smooth(method = "lm") + ylim(0, .01) + xlim(0, 500)+
+  labs(title="Number of Stops vs Transportation, adjusted for Population - SF", x="Number of Stops within 1km", y="Transportation Emissions/Zip Code Population (tons per year per person)")
+ggsave("/Users/alisanford/Desktop/statsfinalproject/statsquad/sfadjustedforpop2.png")
+sfadjustedemissions
+
+#plot number of stops vs transportation, adjusted for population
 ```
 
-```{r}
 
-laadjustedemissions <- emissionsdataLA1 %>%
-  ggplot(aes(x = within1km, y = `Transport(tCO2e/yr)`/Population)) + geom_point(alpha = .2) + stat_smooth(method = "lm") + ylim(0, .005) + xlim(0, 100)
-laadjustedemissions
-```
-
-```{r}
-bothcityemissionsdata <- rbind(emissionsdataLA1, emissionsdataSF1)
-bothnarrow <- rbind(LAnarrow, SFnarrow)
-
-bothplotfaceted <- bothnarrow %>%
-  ggplot(aes(x = number_of_stops, y = `Transport(tCO2e/yr)`, col = distance)) + 
-  geom_point(alpha = .4) + 
-  stat_smooth(method = "loess") + facet_grid(CITYNAME ~ distance, switch = "both") +
-  labs(title="Carbon Emissions vs Public Transit Stops - Los Angeles", x="Number of stops", y="CO2 emissions due to Transportation (tons/year)")
-bothplotfaceted
-```
 
 
 
